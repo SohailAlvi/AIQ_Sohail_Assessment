@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+numpy
+opencv-python
+matplotlib
+pymongo
+minio
+python-multipart
