@@ -2,7 +2,10 @@ from pymongo import MongoClient, errors
 from datetime import datetime
 import os
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://admin:admin123@localhost:27017")
+MONGO_USER = os.getenv("MONGO_USER", "admin")
+MONGO_PASS = os.getenv("MONGO_PASS", "admin123")
+MONGO_HOST = os.getenv("MONGO_HOST", "localhost:27017")
+MONGO_URI = os.getenv("MONGO_URI", f"mongodb://{MONGO_USER}:{MONGO_PASS}@{MONGO_HOST}")
 client = MongoClient(MONGO_URI)
 db = client["object_detection"]
 image_collection = db["image_metadata"]
