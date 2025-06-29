@@ -10,3 +10,4 @@ pymongo
 minio
 python-multipart
 requests
+redis

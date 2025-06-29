@@ -2,14 +2,13 @@ version: '3.8'
 
 services:
   mongo:
-    image: mongo:latest
-    container_name: mongo
+    image: mongo:6
     restart: always
+    ports:
+      - "27017:27017"
     environment:
       MONGO_INITDB_ROOT_USERNAME: admin
       MONGO_INITDB_ROOT_PASSWORD: admin123
-    ports:
-      - "27017:27017"
     volumes:
       - mongo_data:/data/db
 
@@ -27,17 +26,25 @@ services:
     volumes:
       - minio_data:/data
 
-  object-detection-api:
+  redis:
+    image: redis:7
+    restart: always
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--requirepass", "your_redis_password"]
+    volumes:
+      - redis_data:/data
+
+  object_detection_api:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: object-detection-api
-    restart: always
-    ports:
-      - "8000:8000"
     depends_on:
       - mongo
       - minio
+      - redis
+    ports:
+      - "8000:8000"
     environment:
       MONGO_USER: admin
       MONGO_PASS: admin123
@@ -46,7 +53,14 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
       MINIO_BUCKET: object-detection
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: your_redis_password
+      REDIS_TTL_SECONDS: 3600
+    volumes:
+      - .:/app
 
 volumes:
   mongo_data:
   minio_data:
+  redis_data:
