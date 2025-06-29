@@ -6,8 +6,13 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=.:..
 
+
+# Copy project code
+COPY . ./
+
+
 # Set work directory
-WORKDIR /app
+WORKDIR ./
 
 # Install system packages needed for OpenCV and others
 RUN apt-get update && apt-get install -y \
@@ -21,11 +26,23 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 
-# Copy project code
-COPY . .
-
 # Expose API port
 EXPOSE 8000
 
 # Run with Gunicorn + Uvicorn workers
 CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers=2", "--timeout=120"]
+
+#docker build -t object-detection-api .
+#
+#docker run -p 8000:8000 \
+#  --env MONGO_URI=mongodb://host.docker.internal:27017 \
+#  --env MINIO_ENDPOINT=host.docker.internal:9000 \
+#  --env MONGO_USER=admin \
+#  --env MONGO_PASS=admin123 \
+#  --env MONGO_HOST=localhost:27017 \
+#  --env MINIO_ENDPOINT=localhost:9000 \
+#  --env MINIO_ACCESS_KEY=minioadmin \
+#  --env MINIO_SECRET_KEY=minioadmin \
+#  --env MINIO_BUCKET=object-detection \
+#  object-detection-api
+

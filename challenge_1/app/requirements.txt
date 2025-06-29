@@ -9,3 +9,4 @@ pillow
 pymongo
 minio
 python-multipart
+requests

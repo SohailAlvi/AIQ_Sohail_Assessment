@@ -199,6 +199,6 @@ def get_object_crop(image_name: str, object_id: int = Path(..., description="ID 
 
     return StreamingResponse(io.BytesIO(buffer.tobytes()), media_type="image/png")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, port=8000)
