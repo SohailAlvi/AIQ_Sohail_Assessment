@@ -11,3 +11,6 @@ minio
 python-multipart
 requests
 redis
+pytest
+httpx
+pytest-mock
