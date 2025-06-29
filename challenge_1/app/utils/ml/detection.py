@@ -9,21 +9,32 @@ from PIL import Image
 import io
 import uuid
 from typing import Tuple, Optional
+import os
+import requests
+import json
+import base64
 
+from utils.minio_client import MinioClientWrapper
+
+minio_client = MinioClientWrapper()
 
 class ModelConfig:
     num_classes: int = 3  # Background + your 2 classes
     weight_path: str = "model/maskrcnn_finetuned_v2.pth"
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    torchserve_api_url: Optional[str] = os.getenv("TORCHSERVE_API_URL")  # Optional TorchServe endpoint
 
 
 class ObjectDetectionModel:
     def __init__(self, config: ModelConfig):
         self.config = config
         self.device = config.device
-        self.model = self._load_model()
+        self.use_torchserve = config.torchserve_api_url is not None
 
-    def _load_model(self):
+        if not self.use_torchserve:
+            self.model = self._load_local_model()
+
+    def _load_local_model(self):
         model = maskrcnn_resnet50_fpn_v2(weights=None)
 
         # Update box head
@@ -41,6 +52,35 @@ class ObjectDetectionModel:
         return model
 
     def evaluate_image(self, image_bytes: bytes, confidence_threshold: float = 0.5) -> dict:
+        if self.use_torchserve:
+            return self._evaluate_via_torchserve(image_bytes)
+        else:
+            return self._evaluate_locally(image_bytes, confidence_threshold)
+
+    def _evaluate_via_torchserve(self, image_bytes: bytes) -> dict:
+        url = self.config.torchserve_api_url
+        files = {'data': ('image.png', image_bytes, 'application/octet-stream')}
+
+        try:
+            response = requests.post(url, files=files, timeout=30)
+            response.raise_for_status()
+            result = response.json()
+
+            if 'visualization_image' in result and result['visualization_image']:
+                result['visualization_image'] = base64.b64decode(result['visualization_image'])
+
+            return result
+
+        except Exception as e:
+            print(f"[TorchServe Error] {e}")
+            return {
+                "object_count": 0,
+                "objects": [],
+                "visualization_image": None,
+                "error": str(e)
+            }
+
+    def _evaluate_locally(self, image_bytes: bytes, confidence_threshold: float = 0.5) -> dict:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_np = np.array(img)
         img_tensor = F.to_tensor(img).to(self.device)
@@ -55,48 +95,51 @@ class ObjectDetectionModel:
             if score >= confidence_threshold:
                 box = prediction['boxes'][idx].cpu().numpy().astype(int)
                 mask = prediction['masks'][idx, 0].cpu().numpy() > 0.5
-                centroid, radius = self.get_centroid_and_radius(mask)
 
-                # ---- Draw Mask ----
+                # Calculate centroid and radius from mask
+                centroid_mask, radius_mask = self.get_centroid_and_radius(mask)
+
+                # Calculate centroid and radius from bounding box
+                centroid_box, radius_box = self.get_centroid_and_radius_from_box(box)
+
+                # Save individual mask as PNG
+                mask_uint8 = (mask.astype(np.uint8)) * 255
+                _, mask_buffer = cv2.imencode('.png', mask_uint8)
+                mask_bytes = mask_buffer.tobytes()
+
+                mask_filename = f"object_masks/{str(uuid.uuid4())}_mask.png"
+                upload_success = minio_client.upload_file(mask_bytes, mask_filename, content_type="image/png")
+
+                if not upload_success:
+                    print(f"[Warning] Failed to upload mask for object {idx + 1}.")
+
+                # Draw mask overlay
                 colored_mask = np.zeros_like(visualization_img, dtype=np.uint8)
-                color = (0, 255, 0)  # Green mask
+                color = (0, 255, 0)
                 colored_mask[mask] = color
                 alpha = 0.5
                 visualization_img = cv2.addWeighted(visualization_img, 1, colored_mask, alpha, 0)
 
-                # ---- Draw Bounding Box ----
-                cv2.rectangle(
-                    visualization_img,
-                    (box[0], box[1]),
-                    (box[2], box[3]),
-                    color=(255, 0, 0),
-                    thickness=2
-                )
-
-                # ---- Draw Object ID ----
-                cv2.putText(
-                    visualization_img,
-                    f"Obj {idx + 1}",
-                    (box[0], max(box[1] - 10, 0)),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5,
-                    (0, 0, 255),
-                    1
-                )
+                # Draw bounding box
+                cv2.rectangle(visualization_img, (box[0], box[1]), (box[2], box[3]), (255, 0, 0), 2)
+                cv2.putText(visualization_img, f"Obj {idx + 1}", (box[0], max(box[1] - 10, 0)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
 
                 result = {
                     "id": idx + 1,
                     "ref_id": str(uuid.uuid4()),
                     "score": float(score),
                     "bbox": box.tolist(),
-                    "centroid": centroid,
-                    "radius": float(radius) if radius is not None else None
+                    "centroid_from_mask": centroid_mask,
+                    "radius_from_mask": float(radius_mask) if radius_mask is not None else None,
+                    "centroid_from_box": centroid_box,
+                    "radius_from_box": float(radius_box),
+                    "mask_key": mask_filename if upload_success else None
                 }
                 results.append(result)
 
-        # ---- Encode Visualization Image to PNG Bytes ----
-        is_success, buffer = cv2.imencode(".png", cv2.cvtColor(visualization_img, cv2.COLOR_RGB2BGR))
-        visualization_bytes = buffer.tobytes() if is_success else None
+        _, buffer = cv2.imencode(".png", cv2.cvtColor(visualization_img, cv2.COLOR_RGB2BGR))
+        visualization_bytes = buffer.tobytes()
 
         return {
             "object_count": len(results),
@@ -122,4 +165,18 @@ class ObjectDetectionModel:
         cy = int(M["m01"] / M["m00"])
         (_, _), radius = cv2.minEnclosingCircle(largest_contour)
 
+        return (cx, cy), radius
+
+    @staticmethod
+    def get_centroid_and_radius_from_box(box: np.ndarray) -> Tuple[Tuple[float, float], float]:
+        """
+        Calculate centroid and max-inscribed circle radius from bounding box.
+        Box is [x_min, y_min, x_max, y_max].
+        """
+        x_min, y_min, x_max, y_max = box
+        cx = (x_min + x_max) / 2.0
+        cy = (y_min + y_max) / 2.0
+        width = x_max - x_min
+        height = y_max - y_min
+        radius = min(width, height) / 2.0
         return (cx, cy), radius
