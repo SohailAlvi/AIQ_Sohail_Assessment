@@ -1,9 +1,11 @@
 fastapi
+gunicorn
 uvicorn
 pandas
 numpy
-opencv-python
+opencv-python-headless
 matplotlib
 pymongo
 minio
 python-multipart
+redis
