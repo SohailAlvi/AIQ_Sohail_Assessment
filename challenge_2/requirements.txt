@@ -9,3 +9,6 @@ pymongo
 minio
 python-multipart
 redis
+pytest
+pytest-asyncio
+httpx
