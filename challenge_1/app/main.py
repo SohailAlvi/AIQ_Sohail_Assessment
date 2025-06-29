@@ -95,6 +95,7 @@ def get_object_mask_overlay(image_name: str, object_id: int):
     if not target_object:
         raise HTTPException(status_code=404, detail=f"Object ID {object_id} not found for image '{image_name}'.")
 
+    # Download original image from MinIO
     image_bytes = minio_client.download_file(metadata["minio_key"])
     if image_bytes is None:
         raise HTTPException(status_code=500, detail=f"Original image not found for '{image_name}'.")
@@ -103,6 +104,7 @@ def get_object_mask_overlay(image_name: str, object_id: int):
     original_img = cv2.imdecode(img_array, cv2.IMREAD_COLOR)
     height, width, _ = original_img.shape
 
+    # Generate circular mask
     x_min, y_min, x_max, y_max = target_object["bbox"]
     center_x = int((x_min + x_max) / 2)
     center_y = int((y_min + y_max) / 2)
@@ -111,21 +113,28 @@ def get_object_mask_overlay(image_name: str, object_id: int):
     radius = int(min(radius_x, radius_y))
 
     if radius <= 0:
-        raise HTTPException(status_code=400, detail="Invalid bounding box size for circular mask.")
+        raise HTTPException(status_code=400, detail="Invalid bounding box size for mask.")
 
-    circular_mask = np.zeros((height, width), dtype=np.uint8)
-    cv2.circle(circular_mask, (center_x, center_y), radius, 255, thickness=-1)
+    binary_mask = np.zeros((height, width), dtype=np.uint8)
 
-    overlay = np.zeros_like(original_img, dtype=np.uint8)
-    overlay[circular_mask == 255] = (0, 255, 0)
+    cv2.circle(binary_mask, (center_x, center_y), radius, 255, thickness=-1)
 
-    alpha = 0.5
-    overlay_img = cv2.addWeighted(original_img, 1 - alpha, overlay, alpha, 0)
+    # Create Masked Object Image (object only)
+    masked_object_img = cv2.bitwise_and(original_img, original_img, mask=binary_mask)
 
-    success, buffer = cv2.imencode('.png', overlay_img)
+    # Create Background with White Patch
+    background_with_patch = original_img.copy()
+    background_with_patch[binary_mask == 255] = (255, 255, 255)
+
+    # Combine both images horizontally
+    combined_image = np.hstack((masked_object_img, background_with_patch))
+
+    # Encode as PNG
+    success, buffer = cv2.imencode('.png', combined_image)
     if not success:
-        raise HTTPException(status_code=500, detail="Failed to encode overlay image.")
+        raise HTTPException(status_code=500, detail="Failed to encode combined image.")
 
+    # Return as HTTP stream
     return StreamingResponse(io.BytesIO(buffer.tobytes()), media_type="image/png")
 
 @app.get("/objects/{image_name}")
@@ -199,6 +208,6 @@ def get_object_crop(image_name: str, object_id: int = Path(..., description="ID 
 
     return StreamingResponse(io.BytesIO(buffer.tobytes()), media_type="image/png")
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, port=8000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, port=8000)
