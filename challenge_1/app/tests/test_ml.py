@@ -1,5 +1,5 @@
 import pytest
-from app.utils.ml.detection import ObjectDetectionModel, ModelConfig
+from utils.ml.detection import ObjectDetectionModel, ModelConfig
 
 def test_model_detection_on_dummy_image():
     config = ModelConfig()

@@ -173,8 +173,8 @@ def get_object_details(image_name: str, object_id: int = Path(..., description="
     return {
         "object_id": target_object["id"],
         "bounding_box": target_object["bbox"],
-        "centroid": target_object["centroid"],
-        "radius": target_object["radius"],
+        "centroid": target_object["centroid_from_box"],
+        "radius": target_object["radius_from_box"],
         "visualization_url": visualization_url
     }
 
@@ -208,6 +208,6 @@ def get_object_crop(image_name: str, object_id: int = Path(..., description="ID 
 
     return StreamingResponse(io.BytesIO(buffer.tobytes()), media_type="image/png")
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, port=8000)
+# if __name__ == "__main__":
+#     import uvicorn
+#     uvicorn.run(app, port=8000)

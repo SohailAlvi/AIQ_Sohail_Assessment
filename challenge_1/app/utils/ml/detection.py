@@ -20,7 +20,7 @@ minio_client = MinioClientWrapper()
 
 class ModelConfig:
     num_classes: int = 3  # Background + your 2 classes
-    weight_path: str = "model/maskrcnn_finetuned_v2.pth"
+    weight_path: str = os.getenv("PT_MODEL_PATH", "model/maskrcnn_finetuned_v2.pth")
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torchserve_api_url: Optional[str] = os.getenv("TORCHSERVE_API_URL")  # Optional TorchServe endpoint
 
