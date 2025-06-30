@@ -1,0 +1,57 @@
+{
+	"info": {
+		"_postman_id": "978f6b7d-4d00-4d57-ae4a-d2a96a065d64",
+		"name": "AIQ_CH_2",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "10401540"
+	},
+	"item": [
+		{
+			"name": "Get Frame",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "file",
+							"value": "",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8080/frames/?depth_min=9000&depth_max=10000",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8080",
+					"path": [
+						"frames",
+						""
+					],
+					"query": [
+						{
+							"key": "depth_min",
+							"value": "9000"
+						},
+						{
+							"key": "depth_max",
+							"value": "10000"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

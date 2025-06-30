@@ -12,3 +12,8 @@ redis
 pytest
 pytest-asyncio
 httpx
+anyio
+pytest-tornasync
+pytest-trio
+pytest-twisted
+twisted

@@ -14,7 +14,6 @@ A FastAPI microservice that serves depth-filtered stitched images from frame dat
 - ✅ NGINX caching for CDN-like simulation
 - ✅ Gunicorn with Uvicorn workers for production-grade FastAPI deployment
 - ✅ Fully Dockerized (using Docker Compose)
-- ✅ Unit Tests with pytest and pytest-asyncio
 
 ---
 
@@ -26,7 +25,6 @@ A FastAPI microservice that serves depth-filtered stitched images from frame dat
 - **Redis** (Application cache)
 - **NGINX** (Reverse proxy & cache layer)
 - **Docker Compose**
-- **Pytest + pytest-asyncio** (Unit testing)
 
 ---
 
@@ -44,9 +42,9 @@ challenge_2
 │   process_and_persist_image_notebook.ipynb
 │   README.md
 │   requirements.txt
-│
+│                 
 ├───tests
-│       test_api.py  <-- ✅ Unit Tests
+│      test_api.py <-- ✅ Unit Tests
 │
 ├───infra
 │   ├───local
@@ -56,6 +54,7 @@ challenge_2
 │   │
 │   └───nginx
 │           nginx.conf
+
 ```
 
 ---
@@ -77,71 +76,59 @@ challenge_2
 
 ---
 
-## 📡 API Endpoints
+## 🐳 Running Locally with Docker Compose
 
-### ▶️ Get Frames by Depth Range
+```bash
+# Build FastAPI Docker image
+docker-compose build
 
-**URL:**  
-`GET /frames/?depth_min={min_depth}&depth_max={max_depth}`
-
-**Description:**  
-Returns a vertically-stitched PNG image of frames between the specified depth range.
-
-**Example Request (from Postman Collection):**
-
-```
-GET http://localhost:8080/frames/?depth_min=9000&depth_max=10000
+# Start all services (FastAPI, MongoDB, MinIO, Redis, NGINX)
+docker-compose up
 ```
 
-**Example Response (Stitched Image Output):**
+Access services:
 
-![Stitched Frame Example](images/example_output.png)
-
-**Query Parameters:**
-
-| Param      | Type   | Description                     |
-|------------|--------|---------------------------------|
-| depth_min  | float  | Minimum depth value             |
-| depth_max  | float  | Maximum depth value             |
-
-**Response:**  
-- ✅ `200 OK` → Returns image/png stream
-- ❌ `404 Not Found` → No frames found for given depth range
+- **FastAPI API** → http://localhost:8001
+- **NGINX Cached API (CDN Simulation)** → http://localhost:8080
+- **MinIO Console** → http://localhost:9001
+- **MongoDB** → localhost:27017
+- **Redis** → localhost:6379
 
 ---
 
-## ✅ Running Tests
+## 📡 API Usage Example
 
-```bash
-pytest
-```
+### Get Stitched Image for Depth Range
 
-✅ Unit tests mock MongoDB, MinIO, and Redis so no external services are needed during testing.
+**Endpoint:**  
+`GET /frames/?depth_min=5000&depth_max=10000`
+
+**Returns:**  
+A PNG image stitched from frames within the given depth range.
 
 ---
 
 ## 🧱 Building the FastAPI Image Separately (Optional)
 
 ```bash
-docker-compose up --build
+cd api_server
+docker build -t fastapi_app .
 ```
 
 ---
 
-## 📝 NGINX Cache (Local CDN Simulation)
+## 📝 NGINX Cache (Local CDN Layer)
 
-NGINX reverse proxy is configured to cache `/frames/` responses for faster repeated reads.
+NGINX is configured to cache responses from FastAPI `/frames/` route. This helps you simulate how a CDN edge cache would behave.
 
-- NGINX config: `infra/nginx/nginx.conf`
-- Cache volume: `nginx_cache`
+- Config file: `infra/nginx/nginx.conf`
+- Persistent cache path: Docker volume: `nginx_cache`
 
 ---
 
-## ✅ Redis Cache Layer (App-side)
+## ✅ Redis Caching Logic (In API)
 
-Before querying Mongo/Minio, the API checks Redis for cached stitched frames for the given depth range.
-
-Cache TTL: 300 seconds (5 minutes)
+The FastAPI server first checks Redis for a pre-cached stitched image for the requested depth range before querying MongoDB/MinIO.
 
 ---
 
@@ -151,14 +138,16 @@ Cache TTL: 300 seconds (5 minutes)
 docker-compose down -v
 ```
 
+(To also delete attached volumes and caches)
+
 ---
 
 ## ✅ Future Improvements (Ideas)
 
-- Add Prometheus/Grafana monitoring
-- JWT-based Auth layer
-- Use AWS S3 instead of MinIO
-- Deploy on Kubernetes
+- Add Prometheus & Grafana for monitoring
+- Implement JWT-based authentication
+- Use AWS S3 instead of MinIO for production
+- Deploy on Kubernetes (optional)
 
 ---
 
