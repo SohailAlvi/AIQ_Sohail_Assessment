@@ -14,3 +14,8 @@ redis
 pytest
 httpx
 pytest-mock
+anyio
+pytest-tornasync
+pytest-trio
+pytest-twisted
+twisted

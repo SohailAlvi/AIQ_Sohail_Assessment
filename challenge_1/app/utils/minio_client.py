@@ -56,6 +56,6 @@ class MinioClientWrapper:
             )
             url = f"http://{MINIO_ENDPOINT}/{self.bucket_name}/{file_name}"
             return url
-        except S3Error as err:
+        except Exception as err:  # ⬅️ Changed from `S3Error` to `Exception`
             print(f"MinIO Upload Error: {err}")
             return None
