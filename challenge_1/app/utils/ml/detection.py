@@ -20,7 +20,7 @@ minio_client = MinioClientWrapper()
 
 class ModelConfig:
     num_classes: int = 3  # Background + your 2 classes
-    weight_path: str = os.getenv("PT_MODEL_PATH", "model/maskrcnn_finetuned_v2.pth")
+    weight_path: str = os.getenv("PT_MODEL_PATH", "model/best_model.pth")
     device: torch.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     torchserve_api_url: Optional[str] = os.getenv("TORCHSERVE_API_URL")  # Optional TorchServe endpoint
 
@@ -51,7 +51,7 @@ class ObjectDetectionModel:
         model.eval()
         return model
 
-    def evaluate_image(self, image_bytes: bytes, confidence_threshold: float = 0.5) -> dict:
+    def evaluate_image(self, image_bytes: bytes, confidence_threshold: float = 0.95) -> dict:
         if self.use_torchserve:
             return self._evaluate_via_torchserve(image_bytes)
         else:
@@ -80,7 +80,7 @@ class ObjectDetectionModel:
                 "error": str(e)
             }
 
-    def _evaluate_locally(self, image_bytes: bytes, confidence_threshold: float = 0.5) -> dict:
+    def _evaluate_locally(self, image_bytes: bytes, confidence_threshold: float = 0.95) -> dict:
         img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_np = np.array(img)
         img_tensor = F.to_tensor(img).to(self.device)
@@ -178,5 +178,5 @@ class ObjectDetectionModel:
         cy = (y_min + y_max) / 2.0
         width = x_max - x_min
         height = y_max - y_min
-        radius = min(width, height) / 2.0
+        radius = max(width, height) / 2.0
         return (cx, cy), radius

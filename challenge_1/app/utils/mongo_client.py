@@ -124,7 +124,7 @@ def clear_detection_in_progress(image_name):
 def _cache_metadata(image_name, metadata):
     """ Internal helper to set Redis cache with TTL """
     try:
-        redis_client.setex(f"image_metadata:{image_name}", REDIS_TTL_SECONDS, json.dumps(metadata))
+        redis_client.setex(f"image_metadata:{image_name}", REDIS_TTL_SECONDS, json.dumps(metadata, default=str))
         print(f"[Redis] Cached metadata for: {image_name}")
     except Exception as e:
         print(f"[Redis Error] Failed to cache metadata for {image_name}: {e}")

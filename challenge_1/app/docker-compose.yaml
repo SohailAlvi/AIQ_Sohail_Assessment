@@ -57,6 +57,8 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: your_redis_password
       REDIS_TTL_SECONDS: 3600
+      PT_MODEL_PATH: model/best_model.pth
+#      TORCHSERVE_API_URL:
     volumes:
       - .:/app
 

@@ -64,19 +64,21 @@ challenge_1/
 
 The FastAPI application expects the following environment variables (auto-set via Docker Compose):
 
-| Variable | Description | Example |
-|---|---|---|
-| MONGO_USER | MongoDB username | admin |
-| MONGO_PASS | MongoDB password | admin123 |
-| MONGO_HOST | MongoDB host | localhost:27017 |
-| MINIO_ENDPOINT | MinIO endpoint | localhost:9000 |
-| MINIO_ACCESS_KEY | MinIO access key | minioadmin |
-| MINIO_SECRET_KEY | MinIO secret key | minioadmin |
-| MINIO_BUCKET | MinIO bucket name | object-detection |
-| REDIS_HOST | Redis hostname | localhost |
-| REDIS_PORT | Redis port | 6379 |
-| REDIS_PASSWORD | Redis password | your_redis_password |
-| REDIS_TTL_SECONDS | Cache TTL for Redis (seconds) | 3600 |
+| Variable | Description                                | Example                                  |
+|---|--------------------------------------------|------------------------------------------|
+| MONGO_USER | MongoDB username                           | admin                                    |
+| MONGO_PASS | MongoDB password                           | admin123                                 |
+| MONGO_HOST | MongoDB host                               | localhost:27017                          |
+| MINIO_ENDPOINT | MinIO endpoint                             | localhost:9000                           |
+| MINIO_ACCESS_KEY | MinIO access key                           | minioadmin                               |
+| MINIO_SECRET_KEY | MinIO secret key                           | minioadmin                               |
+| MINIO_BUCKET | MinIO bucket name                          | object-detection                         |
+| REDIS_HOST | Redis hostname                             | localhost                                |
+| REDIS_PORT | Redis port                                 | 6379                                     |
+| REDIS_PASSWORD | Redis password                             | your_redis_password                      |
+| REDIS_TTL_SECONDS | Cache TTL for Redis (seconds)              | 3600                                     |
+| PT_MODEL_PATH | Path to Model Weights for Object detection | default: model/maskrcnn_finetuned_v2.pth |
+| TORCHSERVE_API_URL | Model Serving if available                 | default: None                            |
 
 You can optionally add these in your local `.env` file for manual runs.
 
