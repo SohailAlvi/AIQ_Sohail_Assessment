@@ -2,35 +2,49 @@ from pymongo import MongoClient
 from minio import Minio, error
 import redis
 from config import Config
+from logging import setup_logger
 
+# Setup logger for this module
+logger = setup_logger(__name__)
 
 class MongoDBClient:
     def __init__(self):
-        uri = f"mongodb://{Config.MONGO_USER}:{Config.MONGO_PASS}@{Config.MONGO_HOST}/"
-        self.client = MongoClient(uri)
-        self.db = self.client['challenge_db']
-        self.collection = self.db['frames']
+        try:
+            uri = f"mongodb://{Config.MONGO_USER}:{Config.MONGO_PASS}@{Config.MONGO_HOST}/"
+            self.client = MongoClient(uri)
+            self.db = self.client['challenge_db']
+            self.collection = self.db['frames']
+            logger.info(f"Connected to MongoDB at {Config.MONGO_HOST}")
+        except Exception as e:
+            logger.exception(f"Error connecting to MongoDB: {e}")
+            raise
 
 
 class MinioClient:
     def __init__(self):
-        self.client = Minio(
-            Config.MINIO_ENDPOINT,
-            access_key=Config.MINIO_ACCESS_KEY,
-            secret_key=Config.MINIO_SECRET_KEY,
-            secure=False
-        )
-        self._ensure_bucket_exists()
+        try:
+            self.client = Minio(
+                Config.MINIO_ENDPOINT,
+                access_key=Config.MINIO_ACCESS_KEY,
+                secret_key=Config.MINIO_SECRET_KEY,
+                secure=False
+            )
+            logger.info(f"Initialized MinIO client for endpoint {Config.MINIO_ENDPOINT}")
+            self._ensure_bucket_exists()
+        except Exception as e:
+            logger.exception(f"Error initializing MinIO client: {e}")
+            raise
 
     def _ensure_bucket_exists(self):
         try:
             if not self.client.bucket_exists(Config.MINIO_BUCKET):
                 self.client.make_bucket(Config.MINIO_BUCKET)
-                print(f"Bucket '{Config.MINIO_BUCKET}' created in MinIO.")
+                logger.info(f"Bucket '{Config.MINIO_BUCKET}' created in MinIO.")
             else:
-                print(f"Bucket '{Config.MINIO_BUCKET}' already exists.")
+                logger.info(f"Bucket '{Config.MINIO_BUCKET}' already exists in MinIO.")
         except error.S3Error as e:
-            print(f"MinIO bucket error: {e}")
+            logger.error(f"MinIO bucket error: {e}")
+            raise
 
 
 class RedisClient:
@@ -44,7 +58,7 @@ class RedisClient:
             )
             # Test connection
             self.client.ping()
-            print(f"Connected to Redis at {Config.REDIS_HOST}:{Config.REDIS_PORT}")
+            logger.info(f"Connected to Redis at {Config.REDIS_HOST}:{Config.REDIS_PORT}")
         except redis.RedisError as e:
-            print(f"Redis connection error: {e}")
+            logger.error(f"Redis connection error: {e}")
             raise
