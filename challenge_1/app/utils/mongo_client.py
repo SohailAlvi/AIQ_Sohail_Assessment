@@ -95,6 +95,7 @@ def set_detection_in_progress(image_name, in_progress: bool):
 
         metadata = get_image_metadata(image_name, skip_cache=True)
         if metadata:
+            logger.info(f"Caching detection_in_progress={in_progress} for image: {image_name}")
             _cache_metadata(image_name, metadata)
     except errors.PyMongoError as e:
         logger.error(f"Failed to set detection_in_progress for {image_name}: {e}")
