@@ -21,7 +21,7 @@ challenge_1/
 │   ├── utils/                               # Helper modules
 │   │   ├── ml/detection.py                  # Core detection logic (inference)
 │   │   ├── mongo_client.py                  # MongoDB connector
-│       └── minio_client.py                  # MinIO (object storage) connector
+│   │   └── minio_client.py                  # MinIO (object storage) connector
 ├── infra/
 │   ├── local/                               # Local infra bootstrap scripts
 │   │   ├── init_minio.sh
@@ -59,38 +59,111 @@ challenge_1/
 
 ---
 
+## 📡 API Endpoints & Example Usage
+
+### 1. **Upload Image**
+
+`POST /upload-image`
+
+Uploads a `.jpg` or `.png` image to MinIO and triggers background object detection.
+
+**Example:**
+```bash
+curl -X POST http://localhost:8000/upload-image -F "file=@/path/to/image.jpg"
+```
+
+**Response:**
+```json
+{
+  "message": "File uploaded successfully",
+  "url": "http://localhost:9000/object-detection/{image_name}",
+  "file_name": "{uuid_image_name}"
+}
+```
+
+---
+
+### 2. **Get Detection Result for Image**
+
+`GET /objects/{uuid_image_name}`
+
+Returns detection info (object count, bboxes, centroids, radii) and MinIO visualization URL.
+
+**Response:**
+```json
+{
+  "object_count": 2,
+  "objects": [
+    {"id": 1, "bbox": [...], "centroid": [...], "radius": ...},
+    {"id": 2, "bbox": [...], "centroid": [...], "radius": ...}
+  ],
+  "visualization_url": "http://localhost:9000/object-detection/{uuid_image_name}_masked.png"
+}
+```
+
+---
+
+### 3. **Get Object Details**
+
+`GET /objects/{uuid_image_name}/{object_id}`
+
+Returns bounding box, centroid, radius for a specific object.
+
+---
+
+### 4. **Cropped Object Image (Bounding Box Crop)**
+
+`GET /objects/{uuid_image_name}/{object_id}/crop`
+
+Returns image (PNG) of the object's bounding box area.
+
+---
+
+### 5. **Binary Mask Overlay (Segmentation View)**
+
+`GET /objects/{uuid_image_name}/{object_id}/overlay-mask`
+
+Returns a **side-by-side image** with:  
+- Left → Original Image  
+- Right → Binary mask of the object (white foreground, black background)
+
+**Usage:**
+```bash
+curl -o overlay.png http://localhost:8000/objects/{uuid_image_name}/{object_id}/overlay-mask
+```
+
+**Output:**  
+Binary image (PNG), viewable in browsers or tools like Image Viewer.
+
+---
+
 ## 🐳 Docker Compose Setup
 
-This project uses **MongoDB**, **MinIO**, **Redis**, and the **FastAPI app**. Launch all containers:
+Run all services together:
 
 ```bash
 cd app
 docker-compose up --build
 ```
 
-Services:
-- MongoDB → `localhost:27017`
-- MinIO → `localhost:9000` (console: `localhost:9001`)
-- Redis → `localhost:6379`
 - FastAPI → `localhost:8000`
+- MongoDB → `localhost:27017`
+- MinIO → `localhost:9000`
+- Redis → `localhost:6379`
 
 ---
 
-## 🚫 Ignore Files (Optional .gitignore Additions)
+## ✅ Running Tests
 
-```
-__pycache__/
-.ipynb_checkpoints/
-*.pth
-.env
+```bash
+# from ./challenge_1
+pytest
 ```
 
 ---
 
-## ✅ TODO / Next Steps
+## 🗃️ Postman Collection
 
-- [ ] Improve model evaluation metrics (e.g., mAP, IoU) on validation split
-- [ ] Add health check endpoints for services
-- [ ] Integrate TorchServe API deployment
+Import the included **Postman collection (`AIQ_CH_1.postman_collection.json`)** for quick API testing.
 
 ---
