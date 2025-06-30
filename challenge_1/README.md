@@ -10,7 +10,7 @@ This project focuses on **fine-tuning a Mask R-CNN model** for coin detection & 
 ```
 challenge_1/
 ├── .env
-├── fine_tune_notebook.ipynb                 # Jupyter notebook for fine-tuning Mask R-CNN
+├── fine_tune_notebook.ipynb                 # Jupyter notebook for fine-tuning and evaluation with experiment tracking
 ├── app/                                     # FastAPI application for inference
 │   ├── docker-compose.yaml                  # Docker Compose file for multi-container setup
 │   ├── Dockerfile                           # API container Dockerfile
