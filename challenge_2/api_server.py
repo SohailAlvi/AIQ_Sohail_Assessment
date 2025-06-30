@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
 from database import MongoDBClient, MinioClient, RedisClient
 from config import Config
-from logging import setup_logger
+from logger import setup_logger
 
 # Setup logger for this module
 logger = setup_logger(__name__)

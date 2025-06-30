@@ -2,7 +2,7 @@ from pymongo import MongoClient
 from minio import Minio, error
 import redis
 from config import Config
-from logging import setup_logger
+from logger import setup_logger
 
 # Setup logger for this module
 logger = setup_logger(__name__)
