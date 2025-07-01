@@ -51,7 +51,8 @@ Below is a high-level architecture diagram showing how different components inte
 - Located in: `fine_tune_notebook.ipynb`
 - Uses `maskrcnn_resnet50_fpn_v2` from torchvision
 - Trained on COCO-formatted coin dataset with 70:30 data split
-- Outputs `.pth` models saved in `/app/model/`
+- Saved Output `.pth` model weights to be saved in `/app/model/`, currently using best_model.pth
+- Saved model weights will not be used in case where TORCHSERVE_API_URL is set
 
 ---
 

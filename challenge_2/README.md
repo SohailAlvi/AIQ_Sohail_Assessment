@@ -133,6 +133,8 @@ pytest
 
 ```bash
 docker-compose up --build
+# either run image_processor.py with Challenge2.csv in same directory
+# or open process_and_persist_image_notebook.ipynb to persist large image data into DB
 ```
 
 ---
