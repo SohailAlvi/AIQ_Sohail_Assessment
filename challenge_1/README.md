@@ -37,6 +37,13 @@ challenge_1/
 │           └── maskrcnn_v2.mar
 ```
 
+## 🏗️ Project Architecture
+
+Below is a high-level architecture diagram showing how different components interact:
+
+![Project Architecture](images/architecture.png)
+
+
 ---
 
 ## 🏋️‍♂️ Model Training (Fine-Tuning)

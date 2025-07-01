@@ -30,6 +30,15 @@ A FastAPI microservice that serves depth-filtered stitched images from frame dat
 
 ---
 
+## 🏗️ Project Architecture
+
+Below is a high-level architecture diagram showing how different components interact:
+
+![Project Architecture](images/architecture.png)
+
+
+---
+
 ## 📂 Directory Structure
 
 ```
